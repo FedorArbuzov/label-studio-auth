@@ -211,6 +211,7 @@ INSTALLED_APPS = [
     'drf_generators',
     'core',
     'users',
+    'keycloak_auth',
     'organizations',
     'data_import',
     'data_export',
@@ -281,6 +282,7 @@ ALLOWED_HOSTS = get_env_list('ALLOWED_HOSTS', default=['*'])
 # Auth modules
 AUTH_USER_MODEL = 'users.User'
 AUTHENTICATION_BACKENDS = [
+    'keycloak_auth.backends.ExampleAuthentication',
     'rules.permissions.ObjectPermissionBackend',
     'django.contrib.auth.backends.ModelBackend',
 ]

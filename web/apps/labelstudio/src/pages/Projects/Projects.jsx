@@ -15,6 +15,8 @@ import { SettingsPage } from "../Settings";
 import "./Projects.styl";
 import { EmptyProjectsList, ProjectsList } from "./ProjectsList";
 
+import { useConfig } from "../../providers/ConfigProvider";
+
 const getCurrentPage = () => {
   const pageNumberFromURL = new URLSearchParams(location.search).get("page");
 
@@ -31,6 +33,7 @@ export const ProjectsPage = () => {
   const setContextProps = useContextProps();
   const defaultPageSize = Number.parseInt(localStorage.getItem("pages:projects-list") ?? 30);
 
+  const config = useConfig();
   const [modal, setModal] = React.useState(false);
   const openModal = setModal.bind(null, true);
   const closeModal = setModal.bind(null, false);
@@ -113,9 +116,15 @@ export const ProjectsPage = () => {
   }, []);
 
   React.useEffect(() => {
+    console.log(config.user);
+    let projectsCount = projectsList.length
+    let showButton = false
+    if (projectsCount && config.user.role != 'ANNOTATOR') {
+      showButton = true
+    }
     // there is a nice page with Create button when list is empty
     // so don't show the context button in that case
-    setContextProps({ openModal, showButton: projectsList.length > 0 });
+    setContextProps({ openModal, showButton: showButton });
   }, [projectsList.length]);
 
   return (

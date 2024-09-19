@@ -24,7 +24,7 @@ from rest_framework import generics, viewsets
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 from rest_framework.response import Response
-from tasks.models import Annotation, AnnotationDraft, Prediction, Task
+from tasks.models import Annotation, AnnotationDraft, Prediction, Task, ReviewerAnnotationLog
 from tasks.openapi_schema import (
     annotation_request_schema,
     annotation_response_example,
@@ -410,8 +410,16 @@ class AnnotationAPI(generics.RetrieveUpdateDestroyAPIView):
         annotation.delete()
 
     def update(self, request, *args, **kwargs):
+        print(413, request.data)
+        # TODO: save fixes for annotation if it's reviewer
         # save user history with annotator_id, time & annotation result
         annotation = self.get_object()
+        if request.user.role == 'REVIEWER':
+            ReviewerAnnotationLog.objects.create(
+                annotation=annotation,
+            reviewer=request.user,
+            created_at=timezone.now(),
+        )
         # use updated instead of save to avoid duplicated signals
         Annotation.objects.filter(id=annotation.id).update(updated_by=request.user)
 
@@ -536,6 +544,7 @@ class AnnotationsListAPI(GetParentObjectMixin, generics.ListCreateAPIView):
             pass
 
     def perform_create(self, ser):
+        print(540, self.request.data)
         task = self.get_parent_object()
         # annotator has write access only to annotations and it can't be checked it after serializer.save()
         user = self.request.user

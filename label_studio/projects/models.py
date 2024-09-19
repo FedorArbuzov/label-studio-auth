@@ -1115,10 +1115,20 @@ class LabelStreamHistory(models.Model):
 
 class ProjectMember(models.Model):
 
+    ROLE_CHOICES = (
+        ("OWNER", "OWNER"),
+        ("ADMINISTRATOR", "ADMINISTRATOR"),
+        ("MANAGER", "MANAGER"),
+    ("REVIEWER", "REVIEWER"),
+    ("ANNOTATOR", "ANNOTATOR"),
+    )
+
+
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='project_memberships', help_text='User ID'
     )
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='members', help_text='Project ID')
+    user_role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='ANNOTATOR')
     enabled = models.BooleanField(default=True, help_text='Project member is enabled')
     created_at = models.DateTimeField(_('created at'), auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'), auto_now=True)

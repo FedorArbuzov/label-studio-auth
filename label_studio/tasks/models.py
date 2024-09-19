@@ -560,6 +560,25 @@ with tt as (
 AnnotationMixin = load_func(settings.ANNOTATION_MIXIN)
 
 
+class ReviewerAnnotationLog(AnnotationMixin, models.Model):
+    """Reviewer annotations"""
+    annotation = models.ForeignKey(
+        'tasks.Annotation',
+        on_delete=models.CASCADE,
+        related_name='reviewer_annotations',
+        null=True,
+        help_text='Corresponding annotation for this reviewer annotation',
+    )
+    reviewer = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='reviewer_annotations',
+        null=True,
+        help_text='User who created this reviewer annotation',
+    )
+    created_at = models.DateTimeField(_('created at'), auto_now_add=True, help_text='Creation time')
+
+
 class Annotation(AnnotationMixin, models.Model):
     """Annotations & Labeling results"""
 

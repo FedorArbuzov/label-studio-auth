@@ -6,7 +6,7 @@ import drf_yasg.openapi as openapi
 from core.permissions import ViewClassPermission, all_permissions
 from django.utils.decorators import method_decorator
 from drf_yasg.utils import no_body, swagger_auto_schema
-from rest_framework import generics, viewsets
+from rest_framework import generics, viewsets, status
 from rest_framework.authtoken.models import Token
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed
@@ -294,3 +294,22 @@ class UserWhoAmIAPI(generics.RetrieveAPIView):
 
     def get(self, request, *args, **kwargs):
         return super(UserWhoAmIAPI, self).get(request, *args, **kwargs)
+    
+
+class UserUpdateRoleAPI(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        try:
+            user = User.objects.get(pk=pk)
+        except User.DoesNotExist:
+            return Response({"error": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        role = request.data.get('role')
+        if role not in ['OWNER', 'ADMINISTRATOR', 'MANAGER', 'REVIEWER', 'ANNOTATOR']:
+            return Response({"error": "Invalid role"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.role = role
+        user.save()
+
+        return Response({"message": "Role updated successfully"}, status=status.HTTP_200_OK)

@@ -67,6 +67,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
   const contentClass = cn("content-wrapper");
   const contextItem = menubarClass.elem("context-item");
   const showNewsletterDot = !isDefined(config.user.allow_newsletters);
+  const isAdmin = config.user.role !== "ANNOTATOR" && config.user.role !== "REVIEWER";
 
   const sidebarPin = useCallback(
     (e) => {
@@ -184,14 +185,14 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
             >
               <Menu>
                 <Menu.Item label="Projects" to="/projects" icon={<IconFolder />} data-external exact />
-                <Menu.Item label="Organization" to="/organization" icon={<IconPersonInCircle />} data-external exact />
+                {isAdmin && <Menu.Item label="Organization" to="/organization" icon={<IconPersonInCircle />} data-external exact />}
                 {isFF(FF_DIA_835) && <Menu.Item label="Models" to={ModelsPage.path} icon={<IconModel />} exact />}
 
                 <Menu.Spacer />
 
                 <VersionNotifier showNewVersion />
 
-                <Menu.Item label="API" href="/docs/api" icon={<IconTerminal />} target="_blank" />
+                {/* <Menu.Item label="API" href="/docs/api" icon={<IconTerminal />} target="_blank" />
                 <Menu.Item label="Docs" href="https://labelstud.io/guide" icon={<IconBook />} target="_blank" />
                 <Menu.Item
                   label="GitHub"
@@ -206,7 +207,7 @@ export const Menubar = ({ enabled, defaultOpened, defaultPinned, children, onSid
                   icon={<LsSlack />}
                   target="_blank"
                   rel="noreferrer"
-                />
+                /> */}
 
                 <VersionNotifier showCurrentVersion />
 

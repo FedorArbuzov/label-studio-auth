@@ -90,6 +90,12 @@
         <a :href="'/projects/' + project.id" v-for="project in selected.contributed_to_projects">{{project.title}}</a>
       </div>
 
+      <!-- Have access to projects -->
+      <div class="user-info__section" v-if="selected.have_access_to_projects && selected.have_access_to_projects.length">
+        <h3>Have access to projects</h3>
+        <a :href="'/projects/' + project.id" v-for="project in selected.have_access_to_projects">{{project.title}}</a>
+      </div>
+
       <p class="last-active" v-if="selected.last_activity">
         Last activity on {{ print_datetime(selected.last_activity) }}
       </p>

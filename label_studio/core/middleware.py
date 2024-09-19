@@ -9,6 +9,7 @@ from core.utils.contextlog import ContextLog
 from csp.middleware import CSPMiddleware
 from django.conf import settings
 from django.contrib.auth import logout
+from django.http import HttpResponseForbidden
 from django.core.exceptions import MiddlewareNotUsed
 from django.core.handlers.base import BaseHandler
 from django.http import HttpResponsePermanentRedirect
@@ -239,4 +240,22 @@ class HumanSignalCspMiddleware(CSPMiddleware):
                 response['Content-Security-Policy'] = csp_policy
                 del response['Content-Security-Policy-Report-Only']
             delattr(response, '_override_report_only_csp')
+        return response
+    
+
+class InformationSecurityMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+
+        # Проверяем, является ли пользователь менеджером
+        if request.user.is_authenticated and request.user.role == 'ADMINISTRATOR':
+            # Если это POST или PUT запрос
+            if request.method in ['POST', 'PUT', 'PATCH']:
+                # Возвращаем ошибку 403 Forbidden
+                return HttpResponseForbidden("Managers are not allowed to perform this action.")
+            
+        response = self.get_response(request)
+
         return response

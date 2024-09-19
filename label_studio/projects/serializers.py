@@ -11,6 +11,12 @@ from tasks.models import Task
 from users.serializers import UserSimpleSerializer
 
 
+class ProjectMembershipSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()
+    project_id = serializers.IntegerField()
+    action = serializers.ChoiceField(choices=['add', 'remove'])
+
+
 class CreatedByFromContext:
     requires_context = True
 

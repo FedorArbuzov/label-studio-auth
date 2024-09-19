@@ -91,6 +91,18 @@ class User(UserMixin, AbstractBaseUser, PermissionsMixin, UserLastActivityMixin)
     phone = models.CharField(_('phone'), max_length=256, blank=True)
     avatar = models.ImageField(upload_to=hash_upload, blank=True)
 
+    ROLE_CHOICES = (
+    ("OWNER", "OWNER"),
+    ("ADMINISTRATOR", "ADMINISTRATOR"),
+    ("MANAGER", "MANAGER"),
+    ("REVIEWER", "REVIEWER"),
+    ("ANNOTATOR", "ANNOTATOR"),
+    )
+
+    role = models.CharField(max_length=20,
+                    choices=ROLE_CHOICES,
+                    default="ANNOTATOR")
+
     is_staff = models.BooleanField(
         _('staff status'), default=False, help_text=_('Designates whether the user can log into this admin site.')
     )

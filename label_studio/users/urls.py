@@ -18,11 +18,14 @@ urlpatterns = [
     path('user/login/', views.user_login, name='user-login'),
     path('user/signup/', views.user_signup, name='user-signup'),
     path('user/account/', views.user_account, name='user-account'),
+
     url(r'^logout/?$', views.logout, name='logout'),
     # Token
     path('api/current-user/reset-token/', api.UserResetTokenAPI.as_view(), name='current-user-reset-token'),
     path('api/current-user/token', api.UserGetTokenAPI.as_view(), name='current-user-token'),
     path('api/current-user/whoami', api.UserWhoAmIAPI.as_view(), name='current-user-whoami'),
+
+    path('api/users/<int:pk>/role', api.UserUpdateRoleAPI.as_view(), name='user-update-role'),
 ]
 
 # When CLOUD_FILE_STORAGE_ENABLED is set, avatars are uploaded to cloud storage with a different URL pattern.

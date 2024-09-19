@@ -26,7 +26,7 @@ from ml.serializers import MLBackendSerializer
 from projects.functions.next_task import get_next_task
 from projects.functions.stream_history import get_label_stream_history
 from projects.functions.utils import recalculate_created_annotations_and_labels_from_scratch
-from projects.models import Project, ProjectImport, ProjectManager, ProjectReimport, ProjectSummary
+from projects.models import Project, ProjectImport, ProjectManager, ProjectReimport, ProjectSummary, ProjectMember
 from projects.serializers import (
     GetFieldsSerializer,
     ProjectImportSerializer,
@@ -35,6 +35,7 @@ from projects.serializers import (
     ProjectReimportSerializer,
     ProjectSerializer,
     ProjectSummarySerializer,
+    ProjectMembershipSerializer
 )
 from rest_framework import filters, generics, status
 from rest_framework.exceptions import NotFound
@@ -56,6 +57,9 @@ from webhooks.models import WebhookAction
 from webhooks.utils import api_webhook, api_webhook_for_delete, emit_webhooks_for_instance
 
 from label_studio.core.utils.common import load_func
+
+from django.shortcuts import get_object_or_404
+from django.contrib.auth import get_user_model
 
 logger = logging.getLogger(__name__)
 
@@ -251,9 +255,7 @@ class ProjectListAPI(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         fields = serializer.validated_data.get('include')
         filter = serializer.validated_data.get('filter')
-        projects = Project.objects.filter(organization=self.request.user.active_organization).order_by(
-            F('pinned_at').desc(nulls_last=True), '-created_at'
-        )
+        projects = Project.objects.filter(members__user=self.request.user).distinct().order_by('-created_at')
         if filter in ['pinned_only', 'exclude_pinned']:
             projects = projects.filter(pinned_at__isnull=filter == 'exclude_pinned')
         return ProjectManager.with_counts_annotate(projects, fields=fields).prefetch_related('members', 'created_by')
@@ -266,6 +268,7 @@ class ProjectListAPI(generics.ListCreateAPIView):
     def perform_create(self, ser):
         try:
             ser.save(organization=self.request.user.active_organization)
+            ProjectMember.objects.create(project=ser.instance, user=self.request.user)
         except IntegrityError as e:
             if str(e) == 'UNIQUE constraint failed: project.title, project.created_by_id':
                 raise ProjectExistException(
@@ -279,6 +282,44 @@ class ProjectListAPI(generics.ListCreateAPIView):
     @api_webhook(WebhookAction.PROJECT_CREATED)
     def post(self, request, *args, **kwargs):
         return super(ProjectListAPI, self).post(request, *args, **kwargs)
+
+
+class ProjectListAllAPI(generics.ListAPIView):
+    permission_required = all_permissions.projects_view
+    serializer_class = ProjectSerializer
+    queryset = Project.objects.all()
+
+
+class ProjectMembershipAPI(generics.GenericAPIView):
+    permission_classes = api_settings.DEFAULT_PERMISSION_CLASSES
+
+    @swagger_auto_schema(
+        operation_description="Add or remove a user from a project",
+        request_body=ProjectMembershipSerializer,
+        responses={
+            201: openapi.Response('Membership added', ProjectMembershipSerializer),
+            204: openapi.Response('Membership removed'),
+            400: 'Invalid action',
+            404: 'User or Project not found'
+        }
+    )
+    def post(self, request, *args, **kwargs):
+        user_id = request.data.get('user_id')
+        project_id = request.data.get('project_id')
+        action = request.data.get('action')  # 'add' or 'remove'
+
+        user = get_object_or_404(get_user_model(), id=user_id)
+        project = get_object_or_404(Project, id=project_id)
+
+        if action == 'add':
+            ProjectMember.objects.create(project=project, user=user)
+            return Response({'status': 'membership added'}, status=status.HTTP_201_CREATED)
+        elif action == 'remove':
+            membership = get_object_or_404(ProjectMember, project=project, user=user)
+            membership.delete()
+            return Response({'status': 'membership removed'}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'error': 'Invalid action'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @method_decorator(
